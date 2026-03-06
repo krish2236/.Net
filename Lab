@@ -1,0 +1,144 @@
+[06/03, 11:47 am] Rashmi Ma'am: AccountController.cs
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+namespace Rolebase.Controllers
+{
+    public class AccountController : Controller
+    {
+        public IActionResult Login()
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Login(string username, string password)
+        {
+            string role = "";
+
+            if (username == "admin" && password == "123")
+                role = "Admin";
+            else if (username == "user" && password == "123")
+                role = "User";
+            else
+            {
+                ViewBag.Error = "Invalid Login";
+                return View();
+            }
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.Role, role) 
+            };
+            var identity = new ClaimsIdentity(claims,
+               CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal);
+
+            return RedirectToAction("Index", "Home");
+        }
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
+
+            return RedirectToAction("Login");
+        }
+    }
+}
+[06/03, 11:48 am] Rashmi Ma'am: AdminController.cs:
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Rolebase.Controllers
+{
+    [Authorize(Roles = "Admin")]
+    public class AdminController : Controller
+    {
+
+        public IActionResult Index()
+        {
+            return View();
+        }
+    }
+}
+[06/03, 11:48 am] Rashmi Ma'am: HomeController.cs:
+using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Rolebase.Models;
+
+namespace Rolebase.Controllers
+{
+    public class HomeController : Controller
+    {
+        [Authorize]
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        public IActionResult Privacy()
+        {
+            return View();
+        }
+[06/03, 11:49 am] Rashmi Ma'am: UserController.cs:
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Rolebase.Controllers
+{
+    [Authorize(Roles = "User")]
+    public class UserController : Controller
+    {
+        public IActionResult Index()
+        {
+            return View();
+        }
+    }
+}
+[06/03, 11:50 am] Rashmi Ma'am: Views:
+Account folder:
+AccessDenied.cshtml:
+<h2>Access Denied</h2>
+<p>You do not have permission to access this Page</p>  
+
+<a href="/Home">Go back to Home</a>
+
+
+
+Login.cshtml:
+<h2>Login</h2>
+<form method="post">
+    <input type="text" name="username" placeholder="Username" />
+    <br />
+    <input type="password" name="password" placeholder="Password" />
+    <br />
+    <button type="submit">Login</button>
+</form>
+<p>@ViewBag.Error</p>
+[06/03, 11:50 am] Rashmi Ma'am: Views:
+Admin folder:
+Index.cshtml:
+<h2>Admin Page</h2>
+<p>Only Admin can see this page.</p>
+[06/03, 11:50 am] Rashmi Ma'am: Views:
+Home folder:
+Index.cshtml:
+<h2>Welcome @User.Identity.Name</h2>
+<p>Your Role: @User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</p>
+<a href="/Admin">Admin Page</a> |
+<a href="/User">User Page</a> |
+<a href="/Account/Logout">Logout</a>
+[06/03, 11:51 am] Rashmi Ma'am: Views:
+User:
+Index.cshtml:
+<h2>User Page</h2>
+<p>Only User can see this page.</p>
